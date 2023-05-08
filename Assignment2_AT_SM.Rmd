@@ -1,0 +1,101 @@
+---
+title: "Assignment 2_AT_SM"
+author: "Aditya Tomar, Shubham Midha"
+date: '2022-10-30'
+output: pdf_document
+---
+
+Star Digital, a multimedia video service provider which has a growing focus on online advertising wants to understand their effectiveness of it's digital advertising and the return on investments for each of it's media investments it makes. To understand and answer these questions, they have run an online controlled experiment with the help of an online campaign. The campaign was scheduled to run for six websites with the primary objective of increasing the subscription on package sales.
+
+First it established a randomly assigned treatment and control group that is 90%-10% split of the overall customer base. Star digital, arrived at the split based on factors such as baseline conversion rate, campaign reach, minimum lift expected and other statistical test keeping in mind the opportunity cost. The customers in treatment group are presented to the real promotion as the source of inspiration and control group is shown a charity advertisement in its place to guarantee no overflow between the two companions.
+
+Another variation was in terms of the different websites through which the campaign was run. The different websites had different cost of the ad served, with the first type of websites(1-5) charging $25 per thousand impressions and the other one charging $20 per thousand impressions.
+
+Through this experiment - they aim to answer 3 of the following questions:
+	1. Is online advertising effective for Star Digital?
+	2. Is there any frequency effect for advertising on purchase?
+	3. Which sites should Star Digital advertise on? In particular, should it invest in Site 6 or Sites 1 through 5?
+
+Endogeneity concerns:
+
+	1. Omitted Variable Bias: There can be many external factors that can impact 
+	the impressions on each website and can be correlated to it. 
+	For example: If the ad is for a show about young adults, chances are that 
+	people of that age group are likely to purchase it or cause more impressions 
+	- response rate among all age groups would not be same.
+	2. Error in Measurement: Since the only thing to calculate is to record an 
+	impression, we can assume that there is no errors in collecting and 
+	recording the data.
+	3. Simultaneity: We have no reason or evidence which can say that purchasing 
+	the product leads to more impressions on the websites.
+Test/Control Selection Bias: Here we have been told that the test/control 
+assignment has been done at random . Also, for our dataset on which we are 
+evaluating our results, a choice based split into purchase = 1 and purchase = 0 
+was done as well and our sample was picked at random. Overall we can assume that
+there is no selection bias.
+
+```{r}
+library(dplyr)
+sd <- read.csv("star_digital.csv")
+
+#loading star digital data
+
+#View(sd)
+
+#creating variable to calculate combined impressions in Website 1, Website 2, Website 3, Website 4, Website 5
+sd$imp_1_5 = sd$imp_1 + sd$imp_2 + sd$imp_3 + sd$imp_4 + sd$imp_5
+
+#creating variable to calculate combined impressions in Website 1, Website 2, Website 3, Website 4, Website 5, Website 6
+
+sd$imp_1_6 = sd$imp_1_5 + sd$imp_6
+
+``` 
+
+```{r}
+# Explortatory data analysis
+
+#viewing distributions of target variable (purchase) and manipulation variable (test)  
+
+table(sd$purchase)
+
+#Verified choice-based sample output that 50% of people purchased Star Digital, while 50% didn't
+
+table(sd$test)
+#Verified sample constitutes of 10% control and 90% test poeple
+
+table(sd$purchase,sd$test)
+#Verified the distribution of test and control across purchasers and non-purchasers is consistent
+
+hist(sd$imp_1_6)
+# No outliers in # of total impressions
+
+```
+
+```{r}
+# Checking the randomization efficacy by running a t-test to see if # impressions are similar across test and control groups
+t.test(imp_1_5~test, data=sd)
+
+t.test(imp_6~test, data=sd)
+
+# Verified that #impressions on Website 1-5 & Website 6 are similar across test and control groups (p-value is high)
+```
+
+```{r}
+# Q1 - Running a linear regression model
+
+summary(lm (purchase ~ test,data=sd))
+
+# This indicates in the sample 48.5% people who are in control group make the purchase, 50.5% people in the test group make the purchase. However, the p-value (0.0614) even though is low, but it is higher than the usual threshold we keep of 0.05 indicating we can not reject the null hypothesis (null hypothesis -> that mean conversion rate of test and control are similar).
+
+# Hence we can not conclude that online advertising is effective (with 95% confidence interval); However if we find the 90% confidence interval acceptable, we can conclude the online advertising is effective, since we do observe a directional positive impact in favour of test group.  
+
+```
+
+```{r}
+# For evaluating if the frequency impacts / increases the possibility of purchase, we'll run a linear regression model to regress purchases on a combination of manipulation (test) and total impressions (imp_1_6) 
+
+summary(lm (purchase ~ test*imp_1_6,data=sd))
+
+# We observe the p-value of the interaction term (0.0188) and coefficient is positive which indicates that frequency of impressions positively impacts the test group customers
+
+```
